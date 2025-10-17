@@ -1,0 +1,291 @@
+
+import React from "react";
+import logo from "../assets/goTrip_logo.svg";
+import flight from "../assets/material-symbols_flight.svg";
+import building from "../assets/building.svg";
+import visa from "../assets/visa-purple-1.svg";
+import taxi from "../assets/bxs_taxi.svg";
+import vector from "../assets/Vector.svg";
+import FlightSummary from "./PDF_Preview/FlightSummary.jsx";
+import { format } from "date-fns";
+
+export default function ItineraryPreview({
+  pdfRef,
+  overview = {},
+  days = [],
+  hotels = [],
+  payments = [],
+  inclusions = [],
+  exclusions = [],
+  // fallback contents taken from your pasted data if props not provided:
+  importantNotes = [
+    { point: "Airlines Standard Policy", detail: "In case of visa rejection, visa fees or any other non cancellable component cannot be reimbursed at any cost." },
+    { point: "Flight/Hotel Cancellation", detail: "In case of visa rejection, visa fees or any other non cancellable component cannot be reimbursed at any cost." },
+    { point: "Trip Insurance", detail: "In case of visa rejection, visa fees or any other non cancellable component cannot be reimbursed at any cost." },
+    { point: "Hotel Check-In & Check Out", detail: "In case of visa rejection, visa fees or any other non cancellable component cannot be reimbursed at any cost." },
+    { point: "Visa Rejection", detail: "In case of visa rejection, visa fees or any other non cancellable component cannot be reimbursed at any cost." }
+  ],
+  scopeOfService = [
+    { service: "Flight tickets and hotel vouchers", detail: "Delivered 3 days post full payment" },
+    { service: "Web Check-In", detail: "Boarding pass delivery via Email/WhatsApp" },
+    { service: "Support", detail: "Chat support – Response time: 4 hours" },
+    { service: "Cancellation Support", detail: "Provided" },
+    { service: "Trip Support", detail: "Response time: 5 minutes" }
+  ],
+  inclusionSummary = [
+    { category: "Flight", count: 2, details: "All flights mentioned", status: "Awaiting Confirmation" },
+    { category: "Tourist Tax", count: 2, details: "Yotel (Singapore), Oakwood (Sydney), Mercure (Cairns), Novotel (Gold Coast), Holiday Inn (Melbourne)", status: "Awaiting Confirmation" },
+    { category: "Hotel", count: 2, details: "Airport to Hotel - Hotel to Attractions - Day trips if any", status: "Included" },
+    { category: "Transfer Policy (Refundable Upon Claim)", count: "-", details: "If any transfer is delayed beyond 15 minutes, customers may book an app-based or radio taxi and claim a refund for that specific leg.", status: "-" }
+  ],
+  // Activity table fallback: many repeated rows in your paste; keep a compact default
+  activitiesTable = [
+    { city: "Rio de Janeiro", activity: "Sydney Harbour Cruise & Taronga Zoo", type: "Nature/Sightseeing", time: "2-3 Hours" },
+    { city: "Rio de Janeiro", activity: "Sydney Harbour Cruise & Taronga Zoo", type: "Airlines Standard", time: "2-3 Hours" },
+    // ... you can pass a longer array via props; fallback includes a few rows
+  ],
+  paymentSummary = {
+    totalAmountText: "₹ 9,00,000 for 3 pax (inclusive of GST)",
+    tcsText: "not collected",
+    installments: payments.length ? payments : [
+      { installment: "Installment 1", amount: "₹3,50,000", due: "Initial Payment" },
+      { installment: "Installment 2", amount: "₹4,00,000", due: "Post Visa Approval" },
+      { installment: "Installment 3", amount: "Remaining", due: "20 Days Before Departure" }
+    ],
+    visaDetails: { type: "123456", validity: "123456", processingDate: "123456" }
+  }
+}) {
+  return (
+    <div ref={pdfRef} className="bg-white p-6 mt-10 rounded shadow max-w-3xl mx-auto relative font-['Roboto']">
+      {/* Header (visible in preview) */}
+      <header className="w-full text-center mb-4 border-b border-[#e6e6ef] pb-3">
+        <img src={logo} alt="goTrip logo" className="mx-auto w-36" />
+      </header>
+
+      {/* Hero / Overview */}
+      <section className="bg-[#5b21b6] rounded-2xl text-white py-8 px-6 text-center">
+        <h1 className="text-3xl font-medium mb-2">Hi {overview.userName || "Traveler"}!</h1>
+        <h2 className="text-2xl font-semibold mb-1">{overview.title || "My Amazing Trip"}</h2>
+        <p className="text-lg font-semibold">{overview.totalDays || 1} Days</p>
+
+        <ul className="flex justify-center gap-6 mt-4">
+          {[flight, building, vector, taxi, visa].map((ic, idx) => (
+            <li key={idx}><img src={ic} alt="icon" className="w-7 h-7" /></li>
+          ))}
+        </ul>
+      </section>
+
+      {/* Basic details */}
+      <section className="border border-[#541C9C] rounded-2xl py-4 px-6 mt-6">
+        <ul className="grid grid-cols-2 md:grid-cols-5 gap-2 text-sm">
+          <li><div className="font-bold">Departure from:</div><div>{overview.departure || "—"}</div></li>
+          <li><div className="font-bold">Departure:</div><div>{overview.startDate || "—"}</div></li>
+          <li><div className="font-bold">Arrival:</div><div>{overview.endDate || "—"}</div></li>
+          <li><div className="font-bold">Destination:</div><div>{overview.arrival || "—"}</div></li>
+          <li><div className="font-bold">Travellers:</div><div>{overview.travelers || "—"}</div></li>
+        </ul>
+      </section>
+
+      {/* Days / timeline */}
+      <section className="space-y-8 mt-8">
+        {days.map((d, i) => (
+          <div key={i} className="flex items-start gap-4">
+            <div className="flex flex-col items-center w-16 mt-8">
+              <div className="bg-[#321E5D] text-white text-xs font-semibold px-1 rounded-full text-center rotate-[-90deg] w-24">
+                <span style={{ writingMode: "vertical-lr", transform: "rotate(270deg)" }}>Day {d.dayNumber || i+1}</span>
+              </div>
+            </div>
+
+            <div className="flex flex-col items-center relative">
+              {i !== days.length - 1 && <div className="absolute top-14 bottom-0 w-[2px] bg-gray-300" />}
+              <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-md z-10 bg-gray-100">
+                {d.image ? <img src={d.image} alt={d.city || `Day ${i+1}`} className="w-full h-full object-cover" /> : <div className="flex items-center justify-center h-full text-gray-400 text-xs">No Image</div>}
+              </div>
+              <h3 className="text-sm font-semibold text-gray-600 mt-2">{d.date ? format(new Date(d.date), "d MMMM") : ""}</h3>
+              <h2 className="text-base font-bold text-gray-800 mb-2">{d.city || d.title || "Untitled"}</h2>
+            </div>
+
+            <div className="flex-1 bg-white shadow-sm border border-gray-200 rounded-lg p-4">
+              <div className="space-y-2 text-sm text-gray-700">
+                <div><span className="font-semibold text-[#0b1e63]">Morning: </span>{d.activities?.morning || "—"}</div>
+                <div><span className="font-semibold text-[#0b1e63]">Afternoon: </span>{d.activities?.afternoon || "—"}</div>
+                <div><span className="font-semibold text-[#0b1e63]">Evening: </span>{d.activities?.evening || "—"}</div>
+                {d.transport && <div><span className="font-semibold text-[#0b1e63]">Transport: </span>{d.transport}</div>}
+              </div>
+            </div>
+          </div>
+        ))}
+      </section>
+
+      <hr className="my-6 border-[#d1d5db]" />
+
+      {/* Flight summary */}
+      <FlightSummary flights={overview.flights || []} />
+
+      <hr className="my-6 border-[#d1d5db]" />
+
+      {/* Hotel Bookings */}
+      {hotels?.length > 0 && (
+        <section className="my-6">
+          <h3 className="font-bold text-2xl mb-3">Hotel <span className="text-violet-600">Bookings</span></h3>
+          <table className="w-full border-collapse rounded-lg overflow-hidden shadow-sm">
+            <thead>
+              <tr className="bg-[#321E5D] text-white text-sm">
+                <th className="py-2">City</th>
+                <th className="py-2">Check-In</th>
+                <th className="py-2">Check-Out</th>
+                <th className="py-2">Nights</th>
+                <th className="py-2">Hotel Name</th>
+              </tr>
+            </thead>
+            <tbody>
+              {hotels.map((h, idx) => (
+                <tr key={idx} className="bg-[#f9f5ff] text-center border-t">
+                  <td className="py-2">{h.city}</td>
+                  <td className="py-2">{h.checkIn}</td>
+                  <td className="py-2">{h.checkOut}</td>
+                  <td className="py-2">{h.nights}</td>
+                  <td className="py-2">{h.hotelName}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      )}
+
+      <hr className="my-6 border-[#d1d5db]" />
+
+      {/* Important Notes */}
+      <section className="my-6">
+        <h3 className="font-bold text-2xl mb-3">Important Notes</h3>
+        <table className="w-full border-collapse">
+          <thead>
+            <tr className="bg-[#321E5D] text-white text-sm">
+              <th className="py-2 text-left">Point</th>
+              <th className="py-2 text-left">Details</th>
+            </tr>
+          </thead>
+          <tbody>
+            {importantNotes.map((n, idx) => (
+              <tr key={idx} className="bg-[#f9f5ff] border-t">
+                <td className="py-2 font-medium">{n.point}</td>
+                <td className="py-2">{n.detail}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
+
+      {/* Scope of Service */}
+      <section className="my-6">
+        <h3 className="font-bold text-2xl mb-3">Scope of Service</h3>
+        <table className="w-full border-collapse">
+          <thead>
+            <tr className="bg-[#321E5D] text-white text-sm">
+              <th className="py-2 text-left">Service</th>
+              <th className="py-2 text-left">Details</th>
+            </tr>
+          </thead>
+          <tbody>
+            {scopeOfService.map((s, idx) => (
+              <tr key={idx} className="bg-[#f9f5ff] border-t">
+                <td className="py-2 font-medium">{s.service}</td>
+                <td className="py-2">{s.detail}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
+
+      {/* Inclusion Summary */}
+      <section className="my-6">
+        <h3 className="font-bold text-2xl mb-3">Inclusion Summary</h3>
+        <table className="w-full border-collapse">
+          <thead>
+            <tr className="bg-[#321E5D] text-white text-sm">
+              <th className="py-2">Category</th>
+              <th className="py-2">Count</th>
+              <th className="py-2">Details</th>
+              <th className="py-2">Status / Comments</th>
+            </tr>
+          </thead>
+          <tbody>
+            {inclusionSummary.map((inc, idx) => (
+              <tr key={idx} className="bg-[#f9f5ff] text-center border-t">
+                <td className="py-2">{inc.category}</td>
+                <td className="py-2">{inc.count}</td>
+                <td className="py-2 text-left">{inc.details}</td>
+                <td className="py-2">{inc.status}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
+
+      {/* Activity Table */}
+      <section className="my-6">
+        <h3 className="font-bold text-2xl mb-3">Activity Table</h3>
+        <table className="w-full border-collapse">
+          <thead>
+            <tr className="bg-[#321E5D] text-white text-sm">
+              <th className="py-2 text-left">City</th>
+              <th className="py-2 text-left">Activity</th>
+              <th className="py-2 text-left">Type</th>
+              <th className="py-2 text-left">Time Required</th>
+            </tr>
+          </thead>
+          <tbody>
+            {activitiesTable.map((a, idx) => (
+              <tr key={idx} className="bg-[#f9f5ff] border-t">
+                <td className="py-2">{a.city}</td>
+                <td className="py-2">{a.activity}</td>
+                <td className="py-2">{a.type}</td>
+                <td className="py-2">{a.time}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
+
+      {/* Payment Plan + Visa */}
+      <section className="my-6">
+        <h3 className="font-bold text-2xl mb-3">Payment Plan</h3>
+        <div className="border rounded-lg p-4 bg-[#f8f6ff]">
+          <p className="font-semibold mb-1">Total Amount: <span className="font-normal">{paymentSummary.totalAmountText}</span></p>
+          <p className="font-semibold mb-3">TCS: <span className="font-normal">{paymentSummary.tcsText}</span></p>
+
+          <table className="w-full border-collapse mt-2">
+            <thead>
+              <tr className="bg-[#321E5D] text-white text-sm">
+                <th className="py-2">Installment</th>
+                <th className="py-2">Amount</th>
+                <th className="py-2">Due Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {paymentSummary.installments.map((it, idx) => (
+                <tr key={idx} className="bg-white text-center border-t">
+                  <td className="py-2">{it.installment}</td>
+                  <td className="py-2">{it.amount}</td>
+                  <td className="py-2">{it.due}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="mt-4 border rounded-lg p-3 bg-[#f8f6ff]">
+          <h4 className="font-semibold mb-2">Visa details</h4>
+          <p><strong>visa type :</strong> {paymentSummary.visaDetails.type}</p>
+          <p><strong>Validity:</strong> {paymentSummary.visaDetails.validity}</p>
+          <p><strong>processing date :</strong> {paymentSummary.visaDetails.processingDate}</p>
+        </div>
+      </section>
+
+      {/* Footer visible in preview */}
+      <footer className="mt-8 border-t border-[#e6e6ef] pt-4 text-center text-xs text-gray-500">
+        © {new Date().getFullYear()} goTrip | www.gotrip.com | Confidential
+      </footer>
+    </div>
+  );
+}
