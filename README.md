@@ -1,3 +1,8 @@
+## Links
+
+- Netlify Live Link: https://nikhila-gotrip.netlify.app/
+- GitHub Repo Link: https://github.com/Nikhila-DN/goTrip-PDF_generator.git
+
 # React + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
